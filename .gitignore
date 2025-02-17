@@ -1,0 +1,63 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editors/IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+venv/
+env/
+.venv
+.mypy_cache/
+.pytest_cache/
+.coverage
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# C# Build results
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+
+# Dependency directories
+jspm_packages/
+bower_components/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs and databases
+*.log
+*.sqlite
+
+# Local environment files
+.env
+.env.local
+.env*.local
+
