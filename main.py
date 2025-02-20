@@ -206,7 +206,7 @@ def job(max_tokens, top_n):
     if not os.path.exists(date):
         os.makedirs(date)
     stories_filename = f'{date}/hacker_news_stories_{timestamp}.json'
-    speech_filename = f'{date}/hacker_news_stories_{timestamp}.wav'
+    speech_filename = f'{date}/hacker_news_stories_{timestamp}.mp3'
 
     # Synthesize the concatenated summary into one audio file
     text_to_speech(speech_filename, concatenated_summary)
