@@ -5,6 +5,8 @@ This project automatically fetches top stories from Hacker News, summarizes them
 
 Example: 
 
+https://github.com/user-attachments/assets/6ccc78fc-643f-49ea-a139-6e668706cc1a
+
 
 ## Features
 
