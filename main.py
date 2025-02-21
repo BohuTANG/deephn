@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import List, Optional
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -137,10 +137,23 @@ def save_to_json(file_name: str, stories: List[Story]):
     try:
         logger.info(f"Saving stories to {file_name}")
         with open(file_name, 'w', encoding='utf-8') as f:
-            json.dump([vars(story) for story in stories], f, indent=4, ensure_ascii=False)
+            json.dump([asdict(story) for story in stories], f, indent=4, ensure_ascii=False)
         logger.info("Stories saved successfully")
     except Exception as e:
         logger.error(f"Error saving stories: {str(e)}")
+        raise
+
+def load_from_json(file_name: str) -> List[Story]:
+    try:
+        logger.info(f"Loading stories from {file_name}")
+        with open(file_name, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return [Story(**story) for story in data]
+    except FileNotFoundError:
+        logger.info(f"No existing stories file found at {file_name}")
+        return []
+    except Exception as e:
+        logger.error(f"Error loading stories: {str(e)}")
         raise
 
 def text_to_speech(file_name: str, summary: str):
@@ -168,13 +181,28 @@ def text_to_speech(file_name: str, summary: str):
 def job(max_tokens: int, top_n: Optional[int] = None):
     logger.info("=== Starting Hacker News fetch job ===")
     try:
-        stories = fetch_hacker_news()
-        stories = stories[:top_n] if top_n else stories
+        output_dir = f"stories/{datetime.now().strftime('%Y-%m-%d')}"
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        stories_file = f"{output_dir}/stories.json"
+
+        existing_stories = load_from_json(stories_file)
+        existing_ids = set(story.id for story in existing_stories)
+
+        new_stories = fetch_hacker_news()
+        new_stories = new_stories[:top_n] if top_n else new_stories
+
+        stories_to_process = []
+        for story in new_stories:
+            if story.id not in existing_ids:
+                logger.info(f"New story found: {story.title}")
+                stories_to_process.append(story)
+            else:
+                logger.info(f"Story already exists: {story.title}")
 
         all_summaries = []
-        for i, story in enumerate(stories, 1):
+        for i, story in enumerate(stories_to_process, 1):
             try:
-                logger.info(f"Processing story {i}/{len(stories)}")
+                logger.info(f"Processing story {i}/{len(stories_to_process)}")
                 story_content = get_hacker_news_story(story, max_tokens)
 
                 if story_content:
@@ -186,14 +214,15 @@ def job(max_tokens: int, top_n: Optional[int] = None):
                 logger.error(f"Error processing story {story.title}: {str(e)}")
                 continue
 
-        output_dir = f"stories/{datetime.now().strftime('%Y-%m-%d')}"
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        existing_stories.extend(stories_to_process)
+        save_to_json(stories_file, existing_stories)
 
-        save_to_json(f"{output_dir}/stories.json", stories)
-
-        concatenated_summary = "\n\n".join(all_summaries)
-        logger.info("Generating audio for combined summaries...")
-        text_to_speech(f"{output_dir}/combined_summary.mp3", concatenated_summary)
+        if all_summaries:
+            concatenated_summary = "\n\n".join(all_summaries)
+            logger.info("Generating audio for combined summaries...")
+            text_to_speech(f"{output_dir}/combined_summary.mp3", concatenated_summary)
+        else:
+            logger.info("No new stories to process")
     except Exception as e:
         logger.error(f"Error in job execution: {str(e)}")
         raise
